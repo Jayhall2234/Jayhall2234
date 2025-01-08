@@ -1,0 +1,75 @@
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class SearchEngine {
+    private final Map<String, Map<String, Integer>> index = new HashMap<>(); // word -> {file -> frequency}
+    private final Set<String> stopWords = Set.of("a", "an", "the", "and", "or", "of", "to", "in", "is", "on");
+
+    public static void main(String[] args) throws IOException {
+        SearchEngine searchEngine = new SearchEngine();
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Enter the directory to index:");
+        String directoryPath = scanner.nextLine();
+        searchEngine.indexDirectory(directoryPath);
+
+        System.out.println("Search Engine Ready. Type your queries (type 'exit' to quit):");
+        while (true) {
+            System.out.print("Search: ");
+            String query = scanner.nextLine();
+            if (query.equalsIgnoreCase("exit")) break;
+
+            List<String> results = searchEngine.search(query);
+            if (results.isEmpty()) {
+                System.out.println("No results found.");
+            } else {
+                System.out.println("Results:");
+                results.forEach(System.out::println);
+            }
+        }
+    }
+
+    public void indexDirectory(String directoryPath) throws IOException {
+        Files.walk(Paths.get(directoryPath))
+            .filter(Files::isRegularFile)
+            .forEach(path -> {
+                try {
+                    indexFile(path.toFile());
+                } catch (IOException e) {
+                    System.err.println("Error reading file: " + path);
+                }
+            });
+        System.out.println("Indexing complete!");
+    }
+
+    private void indexFile(File file) throws IOException {
+        String content = new String(Files.readAllBytes(file.toPath())).toLowerCase();
+        String[] words = content.split("\\W+");
+        for (String word : words) {
+            if (stopWords.contains(word) || word.isBlank()) continue;
+
+            index.computeIfAbsent(word, k -> new HashMap<>())
+                 .merge(file.getName(), 1, Integer::sum);
+        }
+    }
+
+    public List<String> search(String query) {
+        String[] words = query.toLowerCase().split("\\W+");
+        Map<String, Integer> scores = new HashMap<>();
+
+        for (String word : words) {
+            if (!index.containsKey(word)) continue;
+
+            for (Map.Entry<String, Integer> entry : index.get(word).entrySet()) {
+                scores.merge(entry.getKey(), entry.getValue(), Integer::sum);
+            }
+        }
+
+        return scores.entrySet().stream()
+                     .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                     .map(Map.Entry::getKey)
+                     .collect(Collectors.toList());
+    }
+}
