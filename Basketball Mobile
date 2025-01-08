@@ -1,0 +1,122 @@
+// BasketballGame.java
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class BasketballGame extends JPanel implements MouseListener, MouseMotionListener {
+    private int ballX = 200, ballY = 400, hoopX = 150, hoopY = 50;
+    private int ballRadius = 20, hoopWidth = 100, hoopHeight = 10;
+    private boolean isDragging = false;
+    private int startX, startY, endX, endY;
+    private int score = 0;
+
+    public BasketballGame() {
+        this.addMouseListener(this);
+        this.addMouseMotionListener(this);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        // Background
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+        // Hoop
+        g.setColor(Color.RED);
+        g.fillRect(hoopX, hoopY, hoopWidth, hoopHeight);
+
+        // Ball
+        g.setColor(Color.ORANGE);
+        g.fillOval(ballX - ballRadius, ballY - ballRadius, ballRadius * 2, ballRadius * 2);
+
+        // Score
+        g.setColor(Color.BLACK);
+        g.drawString("Score: " + score, 10, 20);
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        startX = e.getX();
+        startY = e.getY();
+        if (Math.pow(startX - ballX, 2) + Math.pow(startY - ballY, 2) <= Math.pow(ballRadius, 2)) {
+            isDragging = true;
+        }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (isDragging) {
+            endX = e.getX();
+            endY = e.getY();
+            isDragging = false;
+            shootBall();
+        }
+    }
+
+    private void shootBall() {
+        int dx = endX - startX;
+        int dy = endY - startY;
+
+        // Simulate a simple shot
+        Timer timer = new Timer(10, new ActionListener() {
+            int step = 0;
+            int totalSteps = 50;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                step++;
+                ballX += dx / totalSteps;
+                ballY += dy / totalSteps;
+                repaint();
+
+                // Check for scoring
+                if (step == totalSteps) {
+                    ((Timer) e.getSource()).stop();
+                    if (ballX > hoopX && ballX < hoopX + hoopWidth && ballY > hoopY && ballY < hoopY + hoopHeight) {
+                        score++;
+                    }
+                    // Reset ball position
+                    ballX = 200;
+                    ballY = 400;
+                    repaint();
+                }
+            }
+        });
+        timer.start();
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        // Not needed
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        // Not needed
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        // Not needed
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        // Not needed
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+        // Not needed
+    }
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Basketball Game");
+        BasketballGame game = new BasketballGame();
+        frame.add(game);
+        frame.setSize(400, 500);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+}
